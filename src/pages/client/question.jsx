@@ -22,6 +22,7 @@ const QuestionPage = () => {
   const [submitting, setSubmitting] = useState(false);
 
   const { isAuthenticated, user } = useCurrentApp();
+  const { setLatestResult } = useCurrentApp();
   const navigate = useNavigate();
 
   // Lấy danh sách câu hỏi
@@ -82,6 +83,7 @@ const QuestionPage = () => {
       const res = await submitTestAPI({ answers });
       if (res.error === 0) {
         message.success("Submit successfully!");
+        setLatestResult(res.data);
         navigate(`/result/${res.data._id}`);
       } else if (res.error === -1 && res.message.toLowerCase().includes("token")) {
         message.error("Session expired! Please login again.");

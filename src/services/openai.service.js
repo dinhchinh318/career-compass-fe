@@ -1,17 +1,15 @@
 import axios from "../services/axios.customize";
 
 export const askOpenAI = async (prompt, riasecResult = null, options = {}) => {
-  try {
-    const payload = { prompt, riasecResult };
-    const res = await axios.post("v1/api/ai/ask", payload);
+  const payload = { prompt, riasecResult };
 
-    if (options.rawResponse) {
-      return res; // trả nguyên object Axios
-    }
+  const res = await axios.post(
+    "/v1/api/ai/ask",
+    payload,
+    { rawResponse: options.rawResponse }
+  );
 
-    return res.data; // mặc định trả về data
-  } catch (error) {
-    throw error;
-  }
+  return res; // ✅ interceptor đã return data rồi
 };
+
 

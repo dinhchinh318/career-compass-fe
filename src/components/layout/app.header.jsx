@@ -7,8 +7,8 @@ import { fetchAccountAPI, logoutAPI } from "../../services/api.user";
 
 const navLinks = [
   { key: "home", label: <Link to="/">Home</Link> },
-  { key: "about", label: <Link to="/about">About</Link> },
   { key: "question", label: <Link to="/question">Test</Link> },
+  { key: "about", label: <Link to="/about">About</Link> },
 ];
 
 const AppHeader = () => {
@@ -20,8 +20,8 @@ const AppHeader = () => {
   // Map URL → selected menu key
   const currentKey = () => {
     if (location.pathname === "/") return "home";
-    if (location.pathname.startsWith("/about")) return "about";
     if (location.pathname.startsWith("/question")) return "question";
+    if (location.pathname.startsWith("/about")) return "about";
     return "";
   };
 
