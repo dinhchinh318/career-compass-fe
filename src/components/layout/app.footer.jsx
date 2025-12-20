@@ -19,7 +19,7 @@ const AppFooter = () => {
 
   return (
     <footer className="relative bg-[#080d1a] text-slate-400 pt-24 pb-12 overflow-hidden border-t border-white/5">
-      <ModelAI />
+      {/* <ModelAI /> */}
 
       {/* Ambient Background Glow - Nhẹ nhàng, chuyên nghiệp hơn */}
       <div className="absolute top-0 left-1/4 w-80 h-80 bg-blue-500/5 blur-[100px] rounded-full" />

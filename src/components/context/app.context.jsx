@@ -1,56 +1,58 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
-
+import { createContext, useContext, useEffect, useState } from "react";
 import { fetchAccountAPI } from "../../services/api.user";
+import { getMyResultsAPI } from "../../services/api.result"; // Sử dụng đúng API
 
 const AppContext = createContext(null);
 
 export const AppContextProvider = ({ children }) => {
-  // Authentication
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
-
-  // 🔥 RIASEC RESULT (THÊM)
   const [latestResult, setLatestResult] = useState(null);
+  const [appLoading, setAppLoading] = useState(true);
 
-  // Theme
-  const [theme, setTheme] = useState(() => {
-    return localStorage?.getItem("theme") ?? "dark";
-  });
+  const refreshLatestResult = async () => {
+    try {
+      const res = await getMyResultsAPI();
+      // Backend trả về mảng kết quả, lấy cái đầu tiên (mới nhất) vì đã có .sort({createdAt: -1})
+      if (res?.data?.length > 0) {
+        setLatestResult(res.data[0]);
+      }
+    } catch (err) {
+      console.error("Lỗi lấy kết quả RIASEC:", err);
+    }
+  };
 
-  // Fetch account on mount
   useEffect(() => {
-    const fetchAccount = async () => {
+    const initApp = async () => {
       try {
         const res = await fetchAccountAPI();
         if (res.data) {
           setUser(res.data.user);
           setIsAuthenticated(true);
+          
+          // Gọi lấy kết quả ngay sau khi xác thực thành công
+          const resResult = await getMyResultsAPI();
+          if (resResult?.data?.length > 0) {
+            setLatestResult(resResult.data[0]);
+          }
         }
       } catch (err) {
         console.error("Fetch account failed:", err);
+      } finally {
+        setAppLoading(false);
       }
     };
-    fetchAccount();
+    initApp();
   }, []);
 
   return (
     <AppContext.Provider
       value={{
-        theme,
-        setTheme,
-        isAuthenticated,
-        setIsAuthenticated,
-        user,
-        setUser,
-
-        // 🔥 EXPORT RESULT
-        latestResult,
-        setLatestResult,
+        isAuthenticated, setIsAuthenticated,
+        user, setUser,
+        latestResult, setLatestResult,
+        refreshLatestResult, // Cung cấp hàm này để gọi sau khi làm test xong
+        appLoading
       }}
     >
       {children}
@@ -58,10 +60,4 @@ export const AppContextProvider = ({ children }) => {
   );
 };
 
-export const useCurrentApp = () => {
-  const context = useContext(AppContext);
-  if (!context) {
-    throw new Error("useCurrentApp must be used within AppContextProvider");
-  }
-  return context;
-};
+export const useCurrentApp = () => useContext(AppContext);

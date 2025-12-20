@@ -1,255 +1,225 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Form, Input, Button, Avatar, Badge, Tooltip } from "antd";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { Form, Input, Button, Avatar, Badge, Tooltip, Empty } from "antd";
 import { 
-  MessageCircle, 
-  X, 
-  Send, 
-  Sparkles, 
-  RotateCcw, 
-  User, 
-  Bot, 
-  Info,
-  ChevronRight
+  MessageCircle, Send, Sparkles, RotateCcw, 
+  User, Bot, ChevronDown 
 } from "lucide-react";
+import ReactMarkdown from "react-markdown"; // Thêm thư viện render Markdown
+import remarkGfm from "remark-gfm"; // Hỗ trợ bảng và task list
 import logo from "../../assets/img/jpg/logo.jpg";
 import { askOpenAI } from "../../services/openai.service";
-import { getResultByIdAPI } from "../../services/api.result";
 import { useCurrentApp } from "../context/app.context";
 
-/**
- * ModelAI Component - Production-Level AI Career Advisor
- * Features: Auth-aware state, Chat Memory Zones, Session Management
- */
 const ModelAI = () => {
-  /* ================= CONTEXT & REFS ================= */
   const { user, latestResult } = useCurrentApp();
   const userId = user?._id || null;
-  const resultId = latestResult?._id || null;
   const scrollRef = useRef(null);
   const [form] = Form.useForm();
-
-  /* ================= CHAT MEMORY HELPERS ================= */
-  const getStorageKey = useCallback(() => {
-    return userId ? `chat_user_${userId}` : `chat_guest`;
-  }, [userId]);
-
-  const loadChatHistory = useCallback(() => {
-    const saved = localStorage.getItem(getStorageKey());
-    return saved ? JSON.parse(saved) : [];
-  }, [getStorageKey]);
-
-  const saveChatHistory = (msgs) => {
-    localStorage.setItem(getStorageKey(), JSON.stringify(msgs));
-  };
-
-  const clearChatHistory = () => {
-    localStorage.removeItem(getStorageKey());
-    setMessages([]);
-  };
-
-  /* ================= STATE ================= */
+  
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [resultData, setResultData] = useState(null);
-  const [loadingResult, setLoadingResult] = useState(false);
-  const [error, setError] = useState("");
-  const [sessionId, setSessionId] = useState(`sess_${Date.now()}`);
 
-  /* ================= AUTH & STORAGE EFFECT ================= */
-  // Handles Login/Logout state transitions
-  useEffect(() => {
-    // 1. Reset volatile states
+  const storageKey = useMemo(() => (userId ? `chat_user_${userId}` : `chat_guest`), [userId]);
+
+  /* ================= CORE LOGIC: ĐỒNG BỘ TRIỆT ĐỂ ================= */
+  
+  // Lưu lịch sử
+  const saveChatHistory = useCallback((msgs) => {
+    localStorage.setItem(storageKey, JSON.stringify(msgs.slice(-20)));
+  }, [storageKey]);
+
+  // Xóa lịch sử
+  const clearChatHistory = useCallback(() => {
+    localStorage.removeItem(storageKey);
     setMessages([]);
-    setResultData(null);
-    setError("");
-    setSessionId(`sess_${Date.now()}`); // New session for new user state
+  }, [storageKey]);
 
-    // 2. Load history based on new Zone (User or Guest)
-    const history = loadChatHistory();
-    setMessages(history);
-
-    // 3. Clean up UI
-    form.resetFields();
-    
-    console.log(`Auth Transition: ${userId ? 'User Mode' : 'Guest Mode'}`);
-  }, [userId, loadChatHistory]); 
-
-  /* ================= RIASEC DATA EFFECT ================= */
+  // FIX 1: Tự động dọn dẹp khi logout
   useEffect(() => {
-    if (latestResult) {
-      setResultData(latestResult);
-      return;
+    if (!userId) {
+      clearChatHistory();
+      Object.keys(localStorage).forEach(k => k.startsWith('chat_') && localStorage.removeItem(k));
     }
+  }, [userId, clearChatHistory]);
 
-    if (!userId && !resultId) {
-        setResultData(null);
-        return;
-    }
-
-    const fetchResult = async () => {
-      try {
-        setLoadingResult(true);
-        const res = await getResultByIdAPI(resultId || userId);
-        const data = res?.data || res;
-        if (data?.riasecCode) setResultData(data);
-      } catch (err) {
-        setError("Không thể tải kết quả RIASEC");
-      } finally {
-        setLoadingResult(false);
+  // FIX 2: Đồng bộ ngay khi có mã RIASEC mới (Quan trọng nhất)
+  // Sử dụng JSON.stringify để so sánh object latestResult sâu hơn
+  useEffect(() => {
+    if (latestResult?.riasecCode) {
+      const saved = localStorage.getItem(storageKey);
+      const parsed = saved ? JSON.parse(saved) : [];
+      
+      // Nếu tin nhắn đầu tiên chưa có context của mã hiện tại, ta reset để AI tư vấn lại từ đầu
+      if (parsed.length > 0 && !parsed[0].content.includes(latestResult.riasecCode)) {
+        clearChatHistory();
       }
-    };
-    fetchResult();
-  }, [latestResult, userId, resultId]);
-
-  /* ================= UX HELPERS ================= */
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
+  }, [latestResult?.riasecCode, storageKey, clearChatHistory]);
+
+  // Tự động cuộn
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (scrollRef.current) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+    }, 100);
+    return () => clearTimeout(timer);
   }, [messages, loading]);
 
-  /* ================= AI LOGIC ================= */
-  const handleAsk = async (content) => {
-    if (!content?.trim() || loading) return;
+  /* ================= ACTION ================= */
+  const handleAsk = async (values) => {
+    const content = values.prompt?.trim();
+    if (!content || loading) return;
 
-    const userMsg = {
-      id: `msg_${Date.now()}`,
-      role: "user",
-      content: content.trim(),
-      createdAt: new Date().toISOString(),
-      sessionId,
-      userId
-    };
-
-    const updatedWithUser = [...messages, userMsg];
-    setMessages(updatedWithUser);
-    saveChatHistory(updatedWithUser);
-    setLoading(true);
+    const userMsg = { id: Date.now(), role: "user", content };
+    const newMessages = [...messages, userMsg];
+    
+    setMessages(newMessages);
     form.resetFields();
+    setLoading(true);
 
     try {
-      let finalPrompt = content;
-      if (resultData?.riasecCode) {
-        finalPrompt = `[RIASEC: ${resultData.riasecCode}]\nQuestion: ${content}\nProvide expert career advice in Vietnamese.`;
-      }
+      // Gửi mã RIASEC để AI luôn nhớ context
+      const contextPrompt = latestResult?.riasecCode 
+        ? `[USER_RIASEC: ${latestResult.riasecCode}]. Trả lời câu hỏi này theo phong cách chuyên gia tư vấn hướng nghiệp: ${content}` 
+        : content;
 
-      const response = await askOpenAI(finalPrompt, resultData);
+      const response = await askOpenAI(contextPrompt, latestResult);
       
-      const aiReply = typeof response === 'string' 
-        ? response 
-        : (response?.answer || response?.choices?.[0]?.message?.content || "Hệ thống đang bận.");
-
       const aiMsg = {
-        id: `msg_${Date.now() + 1}`,
+        id: Date.now() + 1,
         role: "assistant",
-        content: aiReply,
-        createdAt: new Date().toISOString(),
-        sessionId,
-        userId
+        content: typeof response === 'string' ? response : (response?.answer || "Lỗi kết nối")
       };
 
-      const finalHistory = [...updatedWithUser, aiMsg];
-      setMessages(finalHistory);
-      saveChatHistory(finalHistory);
+      const finalMsgs = [...newMessages, aiMsg];
+      setMessages(finalMsgs);
+      saveChatHistory(finalMsgs);
     } catch (err) {
-      setError("AI không phản hồi, vui lòng thử lại.");
+      console.error(err);
     } finally {
       setLoading(false);
     }
   };
 
-  /* ================= RENDER SUB-COMPONENTS ================= */
-  const MessageBubble = ({ msg }) => {
-    const isAi = msg.role === "assistant";
-    return (
-      <div className={`flex w-full mb-4 ${isAi ? "justify-start" : "justify-end"}`}>
-        <div className={`flex max-w-[85%] ${isAi ? "flex-row" : "flex-row-reverse"}`}>
-          <div className="mt-1 flex-shrink-0">
-            {isAi ? <Avatar icon={<Bot size={18} />} className="bg-indigo-100 text-indigo-600 shadow-sm" /> : <Avatar icon={<User size={18} />} className="bg-slate-200 text-slate-600" />}
-          </div>
-          <div className={`mx-2 p-3 rounded-2xl text-sm shadow-sm ${isAi ? "bg-white text-slate-800 border border-slate-100 rounded-tl-none" : "bg-indigo-600 text-white rounded-tr-none"}`}>
-            <div className="whitespace-pre-wrap">{msg.content}</div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <>
-      {/* Trigger Button */}
-      <div className="fixed bottom-6 right-6 z-[9999]">
-        <Badge dot={messages.length === 0 && !isOpen} color="#4f46e5" offset={[-5, 5]}>
-          <button onClick={() => setIsOpen(!isOpen)} className={`w-14 h-14 rounded-full shadow-2xl transition-all flex items-center justify-center text-white ${isOpen ? "bg-slate-800 rotate-90" : "bg-indigo-600 hover:scale-105"}`}>
-            {isOpen ? <X size={28} /> : <MessageCircle size={28} />}
-          </button>
-        </Badge>
-      </div>
+      {!isOpen && (
+        <div className="fixed bottom-6 right-6 z-[9999] animate-bounce-subtle">
+          <Badge count={latestResult?.riasecCode ? "RIASEC" : 0} color="#4f46e5">
+            <Button
+              type="primary"
+              shape="circle"
+              icon={<MessageCircle size={28} />}
+              onClick={() => setIsOpen(true)}
+              className="w-14 h-14 shadow-2xl bg-indigo-600 border-none flex items-center justify-center text-white hover:scale-110 transition-transform"
+            />
+          </Badge>
+        </div>
+      )}
 
-      {/* Chat Interface */}
-      <div className={`fixed z-[9998] transition-all duration-300 flex flex-col bg-white shadow-2xl
+      <div className={`fixed z-[9998] transition-all duration-500 flex flex-col bg-white shadow-2xl
         ${isOpen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10 pointer-events-none"}
-        bottom-0 right-0 w-full h-full md:bottom-24 md:right-6 md:w-[420px] md:h-[min(650px,80vh)] md:rounded-3xl border border-slate-100 overflow-hidden
+        bottom-0 right-0 w-full h-full md:bottom-24 md:right-6 md:w-[450px] md:h-[min(700px,85vh)] md:rounded-3xl border border-slate-100 overflow-hidden
       `}>
         
         {/* Header */}
         <div className="px-5 py-4 bg-white border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Avatar src={logo} size="large" className="border border-slate-100" />
+            <Avatar src={logo} size={42} className="ring-2 ring-indigo-50" />
             <div>
-              <h3 className="font-bold text-slate-800 text-sm m-0">Career Advisor AI</h3>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                  {userId ? "USER MODE" : "GUEST MODE"}
+              <h3 className="font-bold text-slate-800 text-sm m-0">AI Career Coach</h3>
+              {latestResult && (
+                <span className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-bold">
+                  KẾT QUẢ: {latestResult.riasecCode}
                 </span>
-                {resultData && <Badge count={resultData.riasecCode} style={{ backgroundColor: '#4f46e5', fontSize: '10px' }} />}
-              </div>
+              )}
             </div>
           </div>
-          <div className="flex gap-1">
-            <Tooltip title="Xóa lịch sử">
-              <button onClick={clearChatHistory} className="p-2 text-slate-400 hover:bg-slate-50 rounded-full transition-colors">
-                <RotateCcw size={16} />
-              </button>
-            </Tooltip>
-            <button onClick={() => setIsOpen(false)} className="p-2 md:hidden hover:bg-slate-50 rounded-full"><X size={20} /></button>
+          <div className="flex items-center gap-1">
+            <Button type="text" shape="circle" icon={<RotateCcw size={16} />} onClick={clearChatHistory} className="text-slate-400" />
+            <Button type="text" shape="circle" icon={<ChevronDown size={22} />} onClick={() => setIsOpen(false)} />
           </div>
         </div>
 
-        {/* Chat Body */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto p-5 bg-[#fafbff] scroll-smooth">
+        {/* Chat Content with Markdown Support */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 bg-[#f8fafc] space-y-4 custom-scrollbar">
           {messages.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center opacity-60">
-              <Sparkles size={40} className="text-indigo-200 mb-3" />
-              <p className="text-sm font-medium">Bắt đầu trò chuyện để nhận tư vấn hướng nghiệp</p>
+            <div className="h-full flex flex-col items-center justify-center text-center p-8 text-slate-400">
+              <Sparkles size={40} className="mb-4 text-indigo-200" />
+              <p className="text-sm italic">"Tôi có thể giúp bạn tìm công việc phù hợp với mã {latestResult?.riasecCode || 'RIASEC'} của mình."</p>
             </div>
           ) : (
-            messages.map(msg => <MessageBubble key={msg.id} msg={msg} />)
+            messages.map(msg => (
+              <div key={msg.id} className={`flex ${msg.role === 'assistant' ? 'justify-start' : 'justify-end'}`}>
+                <div className={`flex max-w-[90%] gap-2 ${msg.role === 'assistant' ? 'flex-row' : 'flex-row-reverse'}`}>
+                  <Avatar size={32} icon={msg.role === 'assistant' ? <Bot size={18} /> : <User size={18} />} className={msg.role === 'assistant' ? 'bg-indigo-600' : 'bg-slate-700'} />
+                  
+                  {/* Markdown Container */}
+                  <div className={`p-3.5 rounded-2xl text-[14px] shadow-sm prose prose-slate max-w-none ${
+                    msg.role === 'assistant' 
+                      ? 'bg-white text-slate-700 rounded-tl-none border border-slate-100' 
+                      : 'bg-indigo-600 text-white rounded-tr-none'
+                  }`}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {msg.content}
+                    </ReactMarkdown>
+                  </div>
+                </div>
+              </div>
+            ))
           )}
           {loading && (
-            <div className="flex justify-start mb-4">
-              <div className="bg-white px-4 py-2 rounded-2xl border border-slate-100 animate-pulse text-xs text-indigo-400 font-medium">AI đang suy nghĩ...</div>
+            <div className="flex justify-start pl-10">
+              <div className="bg-indigo-50 text-indigo-500 px-4 py-2 rounded-full text-xs font-medium animate-pulse">
+                Đang phân tích định hướng...
+              </div>
             </div>
           )}
         </div>
 
         {/* Input Area */}
         <div className="p-4 bg-white border-t border-slate-100">
-          <Form form={form} onFinish={({ prompt }) => handleAsk(prompt)}>
-            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1 rounded-2xl focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-50 transition-all">
+          <Form form={form} onFinish={handleAsk}>
+            <div className="relative flex items-center bg-slate-50 border border-slate-200 rounded-2xl focus-within:ring-2 ring-indigo-100 transition-all">
               <Form.Item name="prompt" className="m-0 flex-1">
                 <Input.TextArea
-                  autoSize={{ minRows: 1, maxRows: 3 }}
-                  placeholder="Nhập câu hỏi của bạn..."
-                  className="bg-transparent border-none shadow-none focus:ring-0 text-sm"
-                  onPressEnter={(e) => { if(!e.shiftKey) { e.preventDefault(); form.submit(); } }}
+                  autoSize={{ minRows: 1, maxRows: 4 }}
+                  placeholder="Gõ thắc mắc của bạn tại đây..."
+                  variant="borderless"
+                  className="py-3 pl-4 pr-12 text-[15px]"
+                  onPressEnter={(e) => {
+                    if(!e.shiftKey && window.innerWidth > 768) { 
+                      e.preventDefault(); 
+                      form.submit(); 
+                    }
+                  }}
                 />
               </Form.Item>
-              <Button type="primary" htmlType="submit" loading={loading} icon={<Send size={16} />} className="rounded-xl bg-indigo-600 border-none h-10 w-10 flex items-center justify-center shadow-lg shadow-indigo-100" />
+              <Button 
+                type="primary" 
+                htmlType="submit" 
+                loading={loading} 
+                icon={<Send size={18} />} 
+                className="absolute right-2 bottom-2 rounded-xl h-9 w-9 bg-indigo-600 border-none z-10"
+              />
             </div>
           </Form>
         </div>
+
+        <style dangerouslySetInnerHTML={{ __html: `
+          .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+          .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+          .prose ul { padding-left: 1.2rem; margin: 0.5rem 0; }
+          .prose strong { color: inherit; font-weight: 700; }
+          .prose p { margin-bottom: 0.5rem; line-height: 1.5; }
+          @keyframes bounce-subtle {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+          }
+          .animate-bounce-subtle { animation: bounce-subtle 3s infinite ease-in-out; }
+        `}} />
       </div>
     </>
   );

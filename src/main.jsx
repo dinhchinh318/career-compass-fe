@@ -15,6 +15,8 @@ import ManagePage from "./pages/admin/manage.jsx";
 import ForgotPasswordPage from "./pages/client/forgotPassword.jsx";
 import ResetPasswordPage from "./pages/client/resetPassword.jsx";
 import InfoPage from "./pages/client/infomation.jsx";
+// import AIChatPage from "./pages/client/AIChatPage/AIChatPage.jsx"
+import AIChatPage from "./pages/client/ai.jsx"
 
 const router = createBrowserRouter([
   {
@@ -52,6 +54,10 @@ const router = createBrowserRouter([
       {
         path: "/reset-password",
         element: <ResetPasswordPage />,
+      },
+      {
+        path: "/ai",
+        element: <AIChatPage />,
       },
       {
         path: "/admin",

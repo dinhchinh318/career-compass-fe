@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { User, Menu as MenuIcon, LogOut, UserCog, Compass, ChevronDown, Sparkles, X, Info } from "lucide-react";
+import { User, Menu as MenuIcon, LogOut, UserCog, Compass, ChevronDown, Sparkles, X, MessageSquareText } from "lucide-react";
 import { message, Dropdown, Drawer, Avatar } from "antd";
 import { useCurrentApp } from "../context/app.context";
 import { logoutAPI } from "../../services/api.user";
@@ -12,7 +12,6 @@ const AppHeader = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const roleLabel = user?.role === "admin" ? "Giáo viên" : "Học viên";
-
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 15);
@@ -31,8 +30,15 @@ const AppHeader = () => {
     }
   };
 
+  // Cấu trúc navLinks động dựa trên trạng thái đăng nhập
   const navLinks = [
     { name: "Trang chủ", path: "/" },
+    // Chỉ hiện AI Chat khi đã đăng nhập
+    ...(isAuthenticated ? [{ 
+      name: "AI Chat", 
+      path: "/ai", // Thay đổi path này đúng với route bạn đã đặt
+      icon: <MessageSquareText size={14} className="text-indigo-500" /> 
+    }] : []),
     { name: "Làm bài Test", path: "/question", isCTA: true },
     { name: "Về chúng tôi", path: "/about" },
   ];
@@ -55,7 +61,6 @@ const AppHeader = () => {
       ),
     },
     { type: "divider" },
-
     {
       key: "account",
       icon: <User size={16} className="text-slate-500" />,
@@ -65,7 +70,6 @@ const AppHeader = () => {
         </Link>
       ),
     },
-
     user?.role === "admin" && {
       key: "admin",
       icon: <UserCog size={16} className="text-indigo-500" />,
@@ -75,9 +79,7 @@ const AppHeader = () => {
         </Link>
       ),
     },
-
     { type: "divider" },
-
     {
       key: "logout",
       icon: <LogOut size={16} />,
@@ -86,7 +88,6 @@ const AppHeader = () => {
       onClick: handleLogout,
     },
   ].filter(Boolean);
-
 
   return (
     <>
@@ -100,7 +101,7 @@ const AppHeader = () => {
         <div className="max-w-7xl mx-auto px-5 lg:px-10">
           <div className="flex items-center justify-between">
             
-            {/* LOGO: Bo tròn & Thân thiện */}
+            {/* LOGO */}
             <Link to="/" className="flex items-center gap-3 group">
               <div className="relative flex items-center justify-center w-10 h-10 bg-blue-600 rounded-[14px] shadow-lg shadow-blue-200 group-hover:scale-105 transition-transform duration-300">
                 <Compass size={22} className="text-white" strokeWidth={2.5} />
@@ -113,20 +114,21 @@ const AppHeader = () => {
               </div>
             </Link>
 
-            {/* NAV: Minimal Pill Design (Desktop) */}
-            <nav className="hidden md:flex items-center p-1 bg-slate-100/60 rounded-2xl border border-slate-100">
+            {/* NAV (Desktop) */}
+            <nav className="hidden md:flex items-center p-1 bg-slate-100/60 rounded-2xl border border-slate-100 gap-1">
               {navLinks.map((link) => {
-                const isActive = location.pathname === link.path || (link.path !== "/" && location.pathname.startsWith(link.path));
+                const isActive = location.pathname === link.path;
                 return (
                   <Link
                     key={link.path}
                     to={link.path}
-                    className={`relative px-6 py-2 rounded-[12px] text-sm font-bold transition-all duration-300 ${
+                    className={`relative px-5 py-2 rounded-[12px] text-sm font-bold transition-all duration-300 flex items-center gap-2 ${
                       isActive
                         ? "bg-white text-blue-600 shadow-sm"
                         : "text-slate-500 hover:text-slate-900"
-                    } ${link.isCTA && !isActive ? "flex items-center gap-2" : ""}`}
+                    }`}
                   >
+                    {link.icon && link.icon}
                     {link.isCTA && !isActive && <Sparkles size={14} className="text-amber-400 animate-pulse" />}
                     {link.name}
                   </Link>
@@ -134,7 +136,7 @@ const AppHeader = () => {
               })}
             </nav>
 
-            {/* ACTION: Profile & Buttons */}
+            {/* ACTION */}
             <div className="flex items-center gap-3">
               {isAuthenticated ? (
                 <Dropdown
@@ -155,11 +157,7 @@ const AppHeader = () => {
                       <p className="text-[12px] font-extrabold text-slate-800 leading-none mb-0.5 truncate max-w-[120px]">
                         {user?.name?.split(" ").pop()}
                       </p>
-                      <p
-                        className={`text-[10px] font-semibold leading-none ${
-                          user?.role === "admin" ? "text-indigo-600" : "text-blue-500"
-                        }`}
-                      >
+                      <p className={`text-[10px] font-semibold leading-none ${user?.role === "admin" ? "text-indigo-600" : "text-blue-500"}`}>
                         {roleLabel}
                       </p>
                     </div>
@@ -180,7 +178,6 @@ const AppHeader = () => {
                 </div>
               )}
 
-              {/* MOBILE MENU TOGGLE */}
               <button
                 onClick={() => setMobileMenuOpen(true)}
                 className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 text-slate-600 border border-slate-100"
@@ -207,7 +204,7 @@ const AppHeader = () => {
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <Compass size={18} className="text-white" />
               </div>
-              <span className="font-black text-slate-800 tracking-tight">CAREER COMPASS</span>
+              <span className="font-black text-slate-800 tracking-tight italic">CAREER COMPASS</span>
             </div>
             <button onClick={() => setMobileMenuOpen(false)} className="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 text-slate-500">
               <X size={20} />
@@ -224,7 +221,10 @@ const AppHeader = () => {
                   location.pathname === link.path ? "bg-blue-50 text-blue-600" : "text-slate-600"
                 }`}
               >
-                {link.name}
+                <div className="flex items-center gap-3">
+                   {link.icon && link.icon}
+                   {link.name}
+                </div>
                 {link.isCTA && <Sparkles size={18} className="text-amber-400" />}
               </Link>
             ))}

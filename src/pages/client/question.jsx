@@ -28,10 +28,12 @@ const QuestionPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [animationClass, setAnimationClass] = useState("fade-in");
 
-  const { isAuthenticated, setLatestResult } = useCurrentApp();
+  const { isAuthenticated, appLoading,  setLatestResult } = useCurrentApp();
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (appLoading) return;
+
     if (!isAuthenticated) {
       message.warning("Vui lòng đăng nhập!");
       navigate("/login");
@@ -54,7 +56,7 @@ const QuestionPage = () => {
       }
     };
     fetchQuestions();
-  }, [isAuthenticated, navigate]);
+  }, [appLoading, isAuthenticated, navigate]);
 
   const handleSelect = (option) => {
     const qId = questions[currentIndex]._id;
@@ -80,16 +82,29 @@ const QuestionPage = () => {
     if (answeredCount < questions.length) {
       return message.warning("Vui lòng hoàn thành tất cả câu hỏi!");
     }
+    
     setSubmitting(true);
     try {
       const res = await submitTestAPI({ answers });
-      if (res.error === 0) {
+      
+      // Kiểm tra res.error hoặc res.data.error tùy vào cấu hình axios của bạn
+      if (res && res.error === 0) {
         message.success("Nộp bài thành công!");
-        setLatestResult(res.data);
-        navigate(`/result/${res.data._id}`);
+
+        // Lấy đúng object result (chứa riasecCode, details, ...)
+        const finalResult = res.data; 
+        
+        // 1. Cập nhật vào Context ngay lập tức để ModelAI nhận được qua useCurrentApp
+        setLatestResult(finalResult);
+
+        // 2. Chuyển trang
+        navigate(`/result/${finalResult._id}`);
+      } else {
+        message.error(res?.message || "Có lỗi xảy ra khi chấm điểm!");
       }
     } catch (err) {
-      message.error("Lỗi gửi dữ liệu!");
+      console.error("Submit error:", err);
+      message.error("Lỗi kết nối hệ thống!");
     } finally {
       setSubmitting(false);
     }

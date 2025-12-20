@@ -11,18 +11,20 @@ import { getMyResultsAPI } from "../../services/api.result";
 
 const InfoPage = () => {
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useCurrentApp();
+  const { user, isAuthenticated, appLoading } = useCurrentApp();
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (appLoading) return;
+
     if (!isAuthenticated) {
       message.warning("Bạn cần đăng nhập để xem thông tin!");
       navigate("/login");
       return;
     }
     loadData();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, appLoading]);
 
   const loadData = async () => {
     try {
