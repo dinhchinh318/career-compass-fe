@@ -1,6 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { message, Spin } from "antd";
+import { message, Spin, Progress, Button, ConfigProvider } from "antd";
+import { 
+  ArrowLeftOutlined, 
+  ArrowRightOutlined, 
+  SendOutlined,
+  AppstoreOutlined,
+} from "@ant-design/icons";
 
 import { useCurrentApp } from "../../components/context/app.context";
 import { getQuestionsAPI } from "../../services/api.question";
@@ -20,15 +26,14 @@ const QuestionPage = () => {
   const [answers, setAnswers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [animationClass, setAnimationClass] = useState("fade-in");
 
-  const { isAuthenticated, user } = useCurrentApp();
-  const { setLatestResult } = useCurrentApp();
+  const { isAuthenticated, setLatestResult } = useCurrentApp();
   const navigate = useNavigate();
 
-  // Lấy danh sách câu hỏi
   useEffect(() => {
     if (!isAuthenticated) {
-      message.warning("Please login to take the test!");
+      message.warning("Vui lòng đăng nhập!");
       navigate("/login");
       return;
     }
@@ -38,165 +43,210 @@ const QuestionPage = () => {
       try {
         const res = await getQuestionsAPI();
         if (res.error === 0) {
-          setQuestions(res.data);
-          setAnswers(res.data.map((q) => ({ questionId: q._id, option: "" })));
-        } else if (res.error === -1) {
-          message.error("Session expired! Please login again.");
-          localStorage.removeItem("accessToken");
-          navigate("/login");
-        } else {
-          message.error(res.message || "Failed to load questions!");
+          const shuffled = [...res.data].sort(() => Math.random() - 0.5);
+          setQuestions(shuffled);
+          setAnswers(shuffled.map((q) => ({ questionId: q._id, option: "" })));
         }
       } catch (err) {
-        console.error(err);
-        message.error("Network error! Please try again.");
+        message.error("Lỗi tải dữ liệu!");
       } finally {
         setLoading(false);
       }
     };
-
     fetchQuestions();
   }, [isAuthenticated, navigate]);
 
   const handleSelect = (option) => {
-    const updated = [...answers];
-    updated[currentIndex].option = option;
-    setAnswers(updated);
-  };
-
-  const next = () => {
-    if (!answers[currentIndex].option) {
-      return message.warning("Please choose an answer!");
+    const qId = questions[currentIndex]._id;
+    setAnswers(prev => prev.map(a => a.questionId === qId ? { ...a, option } : a));
+    if (currentIndex < questions.length - 1) {
+      setTimeout(() => goToQuestion(currentIndex + 1), 250);
     }
-    setCurrentIndex((prev) => prev + 1);
   };
 
-  const prev = () => setCurrentIndex((prev) => prev - 1);
+  const goToQuestion = (index) => {
+    if (index === currentIndex || index < 0 || index >= questions.length) return;
+    setAnimationClass(index > currentIndex ? "slide-left" : "slide-right");
+    setTimeout(() => {
+      setCurrentIndex(index);
+      setAnimationClass("fade-in");
+    }, 120);
+  };
+
+  const answeredCount = useMemo(() => answers.filter(a => a.option !== "").length, [answers]);
+  const progressPercent = Math.round((answeredCount / questions.length) * 100);
 
   const handleSubmit = async () => {
-    if (!answers[currentIndex].option) {
-      return message.warning("Please choose an answer!");
+    if (answeredCount < questions.length) {
+      return message.warning("Vui lòng hoàn thành tất cả câu hỏi!");
     }
-
     setSubmitting(true);
     try {
       const res = await submitTestAPI({ answers });
       if (res.error === 0) {
-        message.success("Submit successfully!");
+        message.success("Nộp bài thành công!");
         setLatestResult(res.data);
         navigate(`/result/${res.data._id}`);
-      } else if (res.error === -1 && res.message.toLowerCase().includes("token")) {
-        message.error("Session expired! Please login again.");
-        localStorage.removeItem("accessToken");
-        navigate("/login");
-      } else if (res.error !== 0) {
-        message.error(res.message || "Submit failed!");
       }
     } catch (err) {
-      console.error(err);
-      message.error("Network error! Please try again.");
+      message.error("Lỗi gửi dữ liệu!");
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center py-20">
-        <Spin size="large" />
-      </div>
-    );
-  }
-
-  if (!questions.length) {
-    return (
-      <div className="text-center py-20 text-lg">
-        No questions available. Please contact admin.
-      </div>
-    );
-  }
-
-  const currentQuestion = questions[currentIndex];
-  const currentAnswer = answers[currentIndex];
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-[#FFF8F9]">
+      <Spin size="large" tip="Đang chuẩn bị..." />
+    </div>
+  );
 
   return (
-    <div className="max-w-3xl mx-auto py-10 px-4">
-      <h1 className="text-2xl font-bold text-center mb-6">Career Compass Test</h1>
-      {user && (
-        <p className="text-center text-gray-600 mb-4">
-          Welcome, <span className="font-semibold">{user.name}</span>!
-        </p>
-      )}
+    <ConfigProvider theme={{ token: { primaryColor: '#E11D48' } }}>
+      <div className="min-h-screen bg-[#FFF8F9] pt-24 pb-10 px-4 font-sans text-slate-700">
+        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* TRÁI: KHUNG TRẢ LỜI THU GỌN */}
+          <div className="lg:col-span-7 xl:col-span-8">
+            <div className={`bg-white shadow-sm border border-rose-100 rounded-2xl p-6 md:p-8 min-h-[500px] flex flex-col transition-all duration-200 ${animationClass}`}>
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-rose-500 font-bold text-xs uppercase tracking-tighter">Câu {currentIndex + 1} / {questions.length}</span>
+                  <div className="h-[1px] flex-grow bg-rose-50"></div>
+                </div>
+                <h2 className="text-xl md:text-2xl font-bold text-slate-800 leading-snug">
+                  {questions[currentIndex].content}
+                </h2>
+              </div>
 
-      {/* Progress bar */}
-      <div className="w-full bg-gray-200 h-3 rounded-full mb-6">
-        <div
-          className="bg-blue-600 h-full rounded-full transition-all"
-          style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
-        ></div>
-      </div>
+              <div className="space-y-3 flex-grow">
+                {options.map((opt, idx) => {
+                  const currentQId = questions[currentIndex]._id;
+                  const isSelected = answers.find(a => a.questionId === currentQId)?.option === opt;
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => handleSelect(opt)}
+                      className={`w-full flex items-center p-4 rounded-xl transition-all border text-left
+                        ${isSelected 
+                          ? "border-rose-400 bg-rose-50/30" 
+                          : "border-slate-100 bg-slate-50/30 hover:border-rose-200 hover:bg-white"}`}
+                    >
+                      <div className={`w-5 h-5 rounded-full border mr-4 flex-shrink-0 flex items-center justify-center
+                        ${isSelected ? "border-rose-500 bg-rose-500" : "border-slate-300"}`}>
+                        {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </div>
+                      <span className={`text-sm md:text-base ${isSelected ? "text-rose-600 font-semibold" : "text-slate-600 font-medium"}`}>
+                        {opt}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
 
-      {/* Question card */}
-      <div className="bg-white shadow-md border rounded-xl p-6">
-        <h2 className="text-xl font-semibold mb-4">
-          Question {currentIndex + 1} / {questions.length}
-        </h2>
-        <p className="text-lg mb-6">{currentQuestion.content}</p>
+              <div className="flex justify-between items-center mt-8 pt-6 border-t border-slate-50">
+                <Button 
+                  icon={<ArrowLeftOutlined />} 
+                  onClick={() => goToQuestion(currentIndex - 1)}
+                  disabled={currentIndex === 0}
+                  className="font-semibold text-slate-400"
+                  type="text"
+                >Trở lại</Button>
 
-        <div className="space-y-3">
-          {options.map((opt, idx) => (
-            <label
-              key={idx}
-              className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer ${
-                currentAnswer.option === opt
-                  ? "border-blue-600 bg-blue-50"
-                  : "hover:bg-gray-50"
-              }`}
-            >
-              <input
-                type="radio"
-                name={`q-${currentQuestion._id}`}
-                checked={currentAnswer.option === opt}
-                onChange={() => handleSelect(opt)}
+                {currentIndex === questions.length - 1 ? (
+                  <Button 
+                    type="primary" 
+                    loading={submitting} 
+                    onClick={handleSubmit} 
+                    icon={<SendOutlined />}
+                    className="h-11 px-8 rounded-lg bg-rose-600 font-bold shadow-md"
+                  >Hoàn thành</Button>
+                ) : (
+                  <Button 
+                    onClick={() => goToQuestion(currentIndex + 1)}
+                    className="h-11 px-8 rounded-lg bg-slate-800 text-white font-semibold"
+                  >Tiếp theo</Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* PHẢI: BẢNG Ô VUÔNG NHỎ (KHÔNG CHIA NHÓM) */}
+          <div className="lg:col-span-5 xl:col-span-4 sticky top-20">
+            <div className="bg-white rounded-2xl border border-rose-100 shadow-sm p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <AppstoreOutlined className="text-rose-500" />
+                  <span className="font-bold text-xs uppercase tracking-tight text-slate-500">Tiến độ làm bài</span>
+                </div>
+                <span className="text-rose-600 font-bold text-xs">{answeredCount}/{questions.length}</span>
+              </div>
+
+              <Progress 
+                percent={progressPercent} 
+                strokeColor="#E11D48" 
+                trailColor="#FFF1F2" 
+                strokeWidth={6} 
+                showInfo={false}
+                className="mb-6" 
               />
-              {opt}
-            </label>
-          ))}
+
+              {/* Grid 8 cột, ô số cực nhỏ và sát nhau */}
+              <div className="grid grid-cols-8 sm:grid-cols-10 lg:grid-cols-8 gap-1.5 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
+                {questions.map((q, idx) => {
+                  const isDone = answers.find(a => a.questionId === q._id)?.option !== "";
+                  const isActive = currentIndex === idx;
+                  
+                  return (
+                    <div
+                      key={q._id}
+                      onClick={() => goToQuestion(idx)}
+                      className={`aspect-square rounded-md flex items-center justify-center text-[10px] font-bold cursor-pointer transition-all border
+                        ${isActive 
+                          ? "border-rose-500 bg-rose-500 text-white shadow-sm scale-105 z-10" 
+                          : isDone 
+                            ? "border-rose-200 bg-rose-50 text-rose-500" 
+                            : "border-slate-100 bg-slate-50/50 text-slate-300 hover:border-rose-200"}
+                      `}
+                    >
+                      {idx + 1}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Chú thích thu gọn */}
+              <div className="mt-6 pt-4 border-t border-slate-50 flex justify-around">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 bg-rose-500 rounded-sm"></div>
+                  <span className="text-[10px] text-slate-400 font-medium">Hiện tại</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 bg-rose-50 border border-rose-200 rounded-sm"></div>
+                  <span className="text-[10px] text-slate-400 font-medium">Đã xong</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 bg-slate-100 rounded-sm"></div>
+                  <span className="text-[10px] text-slate-400 font-medium">Chưa làm</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Navigation buttons */}
-        <div className="flex justify-between mt-8">
-          <button
-            onClick={prev}
-            disabled={currentIndex === 0}
-            className={`px-4 py-2 rounded-lg border ${
-              currentIndex === 0 ? "opacity-40 cursor-not-allowed" : "hover:bg-gray-100"
-            }`}
-          >
-            Previous
-          </button>
-
-          {currentIndex === questions.length - 1 ? (
-            <button
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-            >
-              {submitting ? "Submitting..." : "Submit"}
-            </button>
-          ) : (
-            <button
-              onClick={next}
-              className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              Next
-            </button>
-          )}
-        </div>
+        <style jsx>{`
+          .fade-in { animation: fadeIn 0.3s ease-out; }
+          .slide-left { animation: slideLeft 0.15s ease-in forwards; }
+          .slide-right { animation: slideRight 0.15s ease-in forwards; }
+          @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes slideLeft { to { opacity: 0; transform: translateX(-15px); } }
+          @keyframes slideRight { to { opacity: 0; transform: translateX(15px); } }
+          .custom-scrollbar::-webkit-scrollbar { width: 3px; }
+          .custom-scrollbar::-webkit-scrollbar-thumb { background: #FDA4AF; border-radius: 10px; }
+        `}</style>
       </div>
-    </div>
+    </ConfigProvider>
   );
 };
 
 export default QuestionPage;
-
