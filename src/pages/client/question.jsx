@@ -93,7 +93,7 @@ const QuestionPage = () => {
 
         // Lấy đúng object result (chứa riasecCode, details, ...)
         const finalResult = res.data; 
-        
+        console.log("ket qua", finalResult);
         // 1. Cập nhật vào Context ngay lập tức để ModelAI nhận được qua useCurrentApp
         setLatestResult(finalResult);
 

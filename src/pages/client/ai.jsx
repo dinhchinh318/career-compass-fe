@@ -46,7 +46,7 @@ const AIChatPage = () => {
     { icon: <CoffeeOutlined />, text: "Cải thiện kỹ năng mềm", color: "#db2777" }
   ];
 
-  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, loading]);
+  // useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, loading]);
   useEffect(() => { loadSessions(); }, []);
 
   const loadSessions = async () => {
@@ -94,11 +94,30 @@ const AIChatPage = () => {
     try {
       const userRes = await saveChatMessageAPI({ sessionId: activeSessionId, role: 'user', content: userMessage });
       if (userRes) setMessages(prev => [...prev, (userRes?.message || userRes)]);
-      const contextPrompt = latestResult?.riasecCode 
-        ? `[USER_RIASEC: ${latestResult.riasecCode}]. Trả lời câu hỏi này theo phong cách chuyên gia tư vấn hướng nghiệp: ${userMessage}` 
+      const riasecDetailsText = latestResult?.details
+      ? Object.entries(latestResult.details)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join(', ')
+      : '';
+
+      const contextPrompt = latestResult?.riasecCode
+        ? `
+      [USER_RIASEC_CODE: ${latestResult.riasecCode}]
+      [USER_RIASEC_DETAILS: ${riasecDetailsText}]
+
+      Hãy trả lời câu hỏi sau theo phong cách chuyên gia tư vấn hướng nghiệp:
+      ${userMessage}
+      `.trim()
         : userMessage;
-      const aiResponse = await askOpenAI(contextPrompt, latestResult?.riasecCode);
-      console.log('ket qua', latestResult?.riasecCode);
+
+      console.log('RIASEC:', latestResult?.riasecCode);
+      console.log('DETAILS:', latestResult?.details);
+
+      const aiResponse = await askOpenAI(
+        contextPrompt,
+        latestResult?.riasecCode
+      );
+
       const aiContent = typeof aiResponse === 'string' ? aiResponse : (aiResponse?.answer || 'Lỗi kết nối');
       const aiRes = await saveChatMessageAPI({ sessionId: activeSessionId, role: 'assistant', content: aiContent });
       if (aiRes) setMessages(prev => [...prev, (aiRes?.message || aiRes)]);

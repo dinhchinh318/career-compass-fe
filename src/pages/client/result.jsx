@@ -224,7 +224,7 @@ const ResultPage = () => {
         <button onClick={() => navigate("/question")} className="flex items-center justify-center gap-3 bg-white text-slate-900 px-10 py-5 rounded-2xl font-black border-2 border-slate-200 hover:bg-slate-50 transition-all shadow-lg shadow-slate-100">
           <RefreshCw size={20} /> Làm lại bài test
         </button>
-        <button onClick={() => navigate("/")} className="flex items-center justify-center gap-3 bg-rose-600 text-white px-12 py-5 rounded-2xl font-black hover:bg-rose-700 transition-all shadow-xl shadow-rose-200">
+        <button onClick={() => navigate("/ai")} className="flex items-center justify-center gap-3 bg-rose-600 text-white px-12 py-5 rounded-2xl font-black hover:bg-rose-700 transition-all shadow-xl shadow-rose-200">
           <Compass size={20} /> Khám phá thêm lộ trình <ArrowLeft size={20} className="rotate-180" />
         </button>
       </div>

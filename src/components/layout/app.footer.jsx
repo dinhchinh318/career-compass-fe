@@ -168,7 +168,7 @@ const AppFooter = () => {
               Bản quyền nội dung thuộc về Đề tài KHKT CareerCompass
             </p>
             <p className="text-[12px] text-slate-500">
-              © {currentYear} • Tác giả đề tài: <span className="text-slate-300 font-bold hover:text-blue-400 transition-colors cursor-pointer">Nguyễn Duy Thư</span>
+              © {currentYear} • Tác giả đề tài: <span className="text-slate-300 font-bold hover:text-blue-400 transition-colors cursor-pointer">Nguyễn Hoàng Phát - Trần Đình Nhân</span>
             </p>
           </div>
         </div>
