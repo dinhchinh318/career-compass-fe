@@ -94,7 +94,11 @@ const AIChatPage = () => {
     try {
       const userRes = await saveChatMessageAPI({ sessionId: activeSessionId, role: 'user', content: userMessage });
       if (userRes) setMessages(prev => [...prev, (userRes?.message || userRes)]);
-      const aiResponse = await askOpenAI(userMessage, latestResult);
+      const contextPrompt = latestResult?.riasecCode 
+        ? `[USER_RIASEC: ${latestResult.riasecCode}]. Trả lời câu hỏi này theo phong cách chuyên gia tư vấn hướng nghiệp: ${userMessage}` 
+        : userMessage;
+      const aiResponse = await askOpenAI(contextPrompt, latestResult?.riasecCode);
+      console.log('ket qua', latestResult?.riasecCode);
       const aiContent = typeof aiResponse === 'string' ? aiResponse : (aiResponse?.answer || 'Lỗi kết nối');
       const aiRes = await saveChatMessageAPI({ sessionId: activeSessionId, role: 'assistant', content: aiContent });
       if (aiRes) setMessages(prev => [...prev, (aiRes?.message || aiRes)]);
