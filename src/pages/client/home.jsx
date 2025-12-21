@@ -1,5 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+// 1. Import context để kiểm tra trạng thái đăng nhập
+import { useCurrentApp } from "../../components/context/app.context"; 
 import {
   BookOpen,
   Settings,
@@ -9,13 +11,23 @@ import {
   TrendingUp,
   FileText,
   ShieldCheck,
-  ArrowRight,
   Sparkles,
   ChevronRight
 } from "lucide-react";
 
 const HomePage = () => {
   const navigate = useNavigate();
+  // 2. Lấy trạng thái isAuthenticated từ context
+  const { isAuthenticated } = useCurrentApp();
+
+  // 3. Hàm xử lý điều hướng thông minh
+  const handleStartDiscovery = () => {
+    if (isAuthenticated) {
+      navigate("/question"); // Đã đăng nhập -> Vào thẳng trang trắc nghiệm
+    } else {
+      navigate("/register"); // Chưa đăng nhập -> Vào trang đăng ký
+    }
+  };
 
   const riasecTypes = [
     {
@@ -108,8 +120,9 @@ const HomePage = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-5 pt-4">
+              {/* Nút chính: Thay đổi onClick để gọi hàm xử lý thông minh */}
               <button 
-                onClick={() => navigate("/register")}
+                onClick={handleStartDiscovery}
                 className="group relative px-10 py-5 bg-rose-600 text-white rounded-full font-bold text-lg shadow-xl shadow-rose-200 hover:bg-rose-700 hover:-translate-y-1 transition-all duration-300 flex items-center gap-3 overflow-hidden"
               >
                 <span>Bắt đầu khám phá</span>
@@ -174,7 +187,6 @@ const HomePage = () => {
                 </p>
               </div>
 
-              {/* Decorative Circle on Hover */}
               <div className="absolute -bottom-12 -right-12 w-32 h-32 bg-white/30 rounded-full blur-2xl group-hover:bg-rose-200/20 transition-all"></div>
             </div>
           ))}
@@ -194,18 +206,19 @@ const HomePage = () => {
                 Bắt đầu hành trình của bạn
               </div>
               <h2 className="text-3xl md:text-4xl font-bold text-white leading-tight">
-                Sẵn sàng thực hiện bài trắc nghiệm chuẩn hóa?
+                {isAuthenticated ? "Khám phá bản thân ngay hôm nay?" : "Sẵn sàng thực hiện bài trắc nghiệm chuẩn hóa?"}
               </h2>
               <p className="text-slate-400 text-lg leading-relaxed">
                 Chỉ mất 10 phút để nhận diện tính cách và nhận gợi ý lộ trình học tập tối ưu.
               </p>
             </div>
             
+            {/* Nút CTA dưới đây cũng dùng handleStartDiscovery */}
             <button 
-              onClick={() => navigate("/register")}
+              onClick={handleStartDiscovery}
               className="group flex-shrink-0 w-full md:w-auto px-12 py-6 bg-rose-600 text-white rounded-2xl font-black text-xl hover:bg-rose-500 hover:shadow-2xl hover:shadow-rose-600/30 transition-all flex items-center justify-center gap-3"
             >
-              Đăng ký ngay
+              {isAuthenticated ? "Làm bài ngay" : "Đăng ký ngay"}
               <ChevronRight className="group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
