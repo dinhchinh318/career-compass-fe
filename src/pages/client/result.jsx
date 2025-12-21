@@ -26,12 +26,12 @@ const STUDY_ORIENTATION = {
 const ResultPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isAuthenticated } = useCurrentApp();
+  const { isAuthenticated, appLoading } = useCurrentApp();
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isAuthenticated) { navigate("/login"); return; }
+    if (!appLoading &&!isAuthenticated) { navigate("/login"); return; }
     const fetchResult = async () => {
       try {
         const res = await getResultByIdAPI(id);
@@ -60,7 +60,7 @@ const ResultPage = () => {
     <div className="min-h-screen bg-[#FFF9FA] text-slate-800 font-sans pb-20">
       
       {/* 1. HEADER SECTION - TƯƠNG PHẢN MẠNH */}
-      <div className="pt-28 md:pt-36 px-4 max-w-7xl mx-auto">
+      <div className="pt-8 md:pt-36 px-4 max-w-7xl mx-auto">
         <div className="bg-white rounded-[2.5rem] border-2 border-rose-100 shadow-[0_8px_30px_rgb(255,192,203,0.2)] overflow-hidden">
           <div className="flex flex-col lg:flex-row items-center">
             

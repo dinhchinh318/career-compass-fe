@@ -160,7 +160,7 @@ const AIChatPage = () => {
   );
 
   return (
-    <Layout className="premium-pink-layout pt-24">
+    <Layout className="premium-pink-layout">
       {/* Nút Toggle Sidebar cho Desktop */}
       <div className={`desktop-toggle-trigger ${!showSidebar ? 'is-hidden' : ''}`} onClick={() => setShowSidebar(!showSidebar)}>
         {showSidebar ? <DoubleLeftOutlined /> : <DoubleRightOutlined />}
@@ -172,7 +172,7 @@ const AIChatPage = () => {
       </Sider>
 
       {/* Drawer Mobile (Sẽ mở khi bấm nút History) */}
-      <Drawer placement="left" onClose={() => setMobileVisible(false)} open={mobileVisible} width={280} styles={{ body: { padding: 0 } }} closable={true}>
+      <Drawer placement="left" onClose={() => setMobileVisible(false)} open={mobileVisible} size={280} styles={{ body: { padding: 0 } }} closable={true}>
         <SidebarContent />
       </Drawer>
 

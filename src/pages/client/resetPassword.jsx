@@ -46,7 +46,7 @@ const ResetPasswordPage = () => {
             }}
         >
             {/* 1. FIX BUG HEADER: pt-24 đảm bảo nội dung nằm dưới Header fixed */}
-            <div className="min-h-screen bg-[#FFF8F9] pt-24 pb-12 px-4 flex justify-center items-center">
+            <div className="min-h-screen bg-[#FFF8F9] pt-8 pb-12 px-4 flex justify-center items-center">
                 <div className="w-full max-w-[450px]">
                     
                     {/* 2. CARD RESET PASSWORD */}

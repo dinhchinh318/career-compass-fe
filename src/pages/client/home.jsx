@@ -78,7 +78,7 @@ const HomePage = () => {
     <div className="w-full min-h-screen bg-[#fffafa] text-slate-800 font-sans selection:bg-rose-200 selection:text-rose-900">
       
       {/* --- SECTION 1: HERO SECTION --- */}
-      <section className="relative pt-32 pb-24 px-6 overflow-hidden">
+      <section className="relative pt-8 pb-24 px-6 overflow-hidden">
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-rose-50/50 to-transparent -z-10 skew-x-12"></div>
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-rose-100/40 blur-[100px] rounded-full -z-10"></div>
         

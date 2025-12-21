@@ -28,13 +28,11 @@ const QuestionPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [animationClass, setAnimationClass] = useState("fade-in");
 
-  const { isAuthenticated, appLoading,  setLatestResult } = useCurrentApp();
+  const { isAuthenticated, appLoading, setLatestResult } = useCurrentApp();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (appLoading) return;
-
-    if (!isAuthenticated) {
+    if (!appLoading && !isAuthenticated) {
       message.warning("Vui lòng đăng nhập!");
       navigate("/login");
       return;
@@ -76,7 +74,7 @@ const QuestionPage = () => {
   };
 
   const answeredCount = useMemo(() => answers.filter(a => a.option !== "").length, [answers]);
-  const progressPercent = Math.round((answeredCount / questions.length) * 100);
+  const progressPercent = questions.length > 0 ? Math.round((answeredCount / questions.length) * 100) : 0;
 
   const handleSubmit = async () => {
     if (answeredCount < questions.length) {
@@ -86,18 +84,10 @@ const QuestionPage = () => {
     setSubmitting(true);
     try {
       const res = await submitTestAPI({ answers });
-      
-      // Kiểm tra res.error hoặc res.data.error tùy vào cấu hình axios của bạn
       if (res && res.error === 0) {
         message.success("Nộp bài thành công!");
-
-        // Lấy đúng object result (chứa riasecCode, details, ...)
         const finalResult = res.data; 
-        console.log("ket qua", finalResult);
-        // 1. Cập nhật vào Context ngay lập tức để ModelAI nhận được qua useCurrentApp
         setLatestResult(finalResult);
-
-        // 2. Chuyển trang
         navigate(`/result/${finalResult._id}`);
       } else {
         message.error(res?.message || "Có lỗi xảy ra khi chấm điểm!");
@@ -112,16 +102,17 @@ const QuestionPage = () => {
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-[#FFF8F9]">
-      <Spin size="large" tip="Đang chuẩn bị..." />
+      {/* FIX 1: Removed 'tip' from Spin as it requires nesting/fullscreen wrapper according to warning */}
+      <Spin size="large" />
+      <span className="mt-4 text-rose-500 font-medium">Đang chuẩn bị...</span>
     </div>
   );
 
   return (
     <ConfigProvider theme={{ token: { primaryColor: '#E11D48' } }}>
-      <div className="min-h-screen bg-[#FFF8F9] pt-24 pb-10 px-4 font-sans text-slate-700">
+      <div className="min-h-screen bg-[#FFF8F9] pt-8 pb-10 px-4 font-sans text-slate-700">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
           
-          {/* TRÁI: KHUNG TRẢ LỜI THU GỌN */}
           <div className="lg:col-span-7 xl:col-span-8">
             <div className={`bg-white shadow-sm border border-rose-100 rounded-2xl p-6 md:p-8 min-h-[500px] flex flex-col transition-all duration-200 ${animationClass}`}>
               <div className="mb-6">
@@ -130,13 +121,13 @@ const QuestionPage = () => {
                   <div className="h-[1px] flex-grow bg-rose-50"></div>
                 </div>
                 <h2 className="text-xl md:text-2xl font-bold text-slate-800 leading-snug">
-                  {questions[currentIndex].content}
+                  {questions[currentIndex]?.content}
                 </h2>
               </div>
 
               <div className="space-y-3 flex-grow">
                 {options.map((opt, idx) => {
-                  const currentQId = questions[currentIndex]._id;
+                  const currentQId = questions[currentIndex]?._id;
                   const isSelected = answers.find(a => a.questionId === currentQId)?.option === opt;
                   return (
                     <button
@@ -186,7 +177,6 @@ const QuestionPage = () => {
             </div>
           </div>
 
-          {/* PHẢI: BẢNG Ô VUÔNG NHỎ (KHÔNG CHIA NHÓM) */}
           <div className="lg:col-span-5 xl:col-span-4 sticky top-20">
             <div className="bg-white rounded-2xl border border-rose-100 shadow-sm p-5">
               <div className="flex items-center justify-between mb-4">
@@ -200,13 +190,14 @@ const QuestionPage = () => {
               <Progress 
                 percent={progressPercent} 
                 strokeColor="#E11D48" 
-                trailColor="#FFF1F2" 
-                strokeWidth={6} 
+                /* FIX 2: Changed trailColor to railColor for antd v5+ compatibility */
+                railColor="#FFF1F2" 
+                /* FIX 3: Removed strokeWidth as it is deprecated; using size={6} instead */
+                size={[undefined, 6]} 
                 showInfo={false}
                 className="mb-6" 
               />
 
-              {/* Grid 8 cột, ô số cực nhỏ và sát nhau */}
               <div className="grid grid-cols-8 sm:grid-cols-10 lg:grid-cols-8 gap-1.5 max-h-[400px] overflow-y-auto pr-1 custom-scrollbar">
                 {questions.map((q, idx) => {
                   const isDone = answers.find(a => a.questionId === q._id)?.option !== "";
@@ -230,7 +221,6 @@ const QuestionPage = () => {
                 })}
               </div>
 
-              {/* Chú thích thu gọn */}
               <div className="mt-6 pt-4 border-t border-slate-50 flex justify-around">
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 bg-rose-500 rounded-sm"></div>
@@ -249,7 +239,8 @@ const QuestionPage = () => {
           </div>
         </div>
 
-        <style jsx>{`
+        {/* FIX 4: Changed jsx to jsx="true" to resolve the non-boolean attribute error */}
+        <style jsx="true">{`
           .fade-in { animation: fadeIn 0.3s ease-out; }
           .slide-left { animation: slideLeft 0.15s ease-in forwards; }
           .slide-right { animation: slideRight 0.15s ease-in forwards; }

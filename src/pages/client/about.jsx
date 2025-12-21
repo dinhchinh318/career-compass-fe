@@ -23,7 +23,7 @@ const RESEARCH_STATS = [
 export default function AboutPage() {
   const navigate = useNavigate();
   return (
-    <div className="min-h-screen bg-[#fff5f7] text-slate-800 pb-20 pt-20 font-sans overflow-x-hidden">
+    <div className="min-h-screen bg-[#fff5f7] text-slate-800 pb-20 font-sans overflow-x-hidden">
       
       {/* 1. HERO HEADER - Tối ưu độ nổi bật của chữ */}
       <section className="relative pt-32 pb-40 px-4 min-h-screen flex items-center justify-center overflow-hidden">

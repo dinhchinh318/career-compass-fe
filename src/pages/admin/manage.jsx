@@ -97,12 +97,69 @@ const ManagePage = () => {
   };
 
   const exportToExcel = () => {
-    const ws = XLSX.utils.json_to_sheet(filteredUsers.map(u => ({
-      "Học Tên": u.name, "Email": u.email, "Mã RIASEC": u.results?.[0]?.riasecCode || "N/A"
-    })));
+    if (!filteredUsers || filteredUsers.length === 0) {
+      alert("Không có dữ liệu để xuất!");
+      return;
+    }
+
+    // Hàm bổ trợ để đưa ra tư vấn khối thi nhanh
+    const getConsultation = (code) => {
+      if (!code || code === "Chưa làm test") return "N/A";
+      const primaryCode = code.charAt(0); // Lấy chữ cái đầu tiên (Nhóm mạnh nhất)
+      
+      const adviceMap = {
+        'R': "Khối A, A1 (Kỹ thuật, Công nghệ, Kiến trúc)",
+        'I': "Khối A, B, D07 (Nghiên cứu, Y sinh, IT)",
+        'A': "Khối H, V, D01 (Nghệ thuật, Thiết kế, Ngôn ngữ)",
+        'S': "Khối C, D, B (Sư phạm, Y tế, Tâm lý, Xã hội)",
+        'E': "Khối A1, D, C (Kinh tế, Quản trị, Luật, Marketing)",
+        'C': "Khối A, D (Kế toán, Tài chính, Hành chính)",
+      };
+      return adviceMap[primaryCode] || "Cần tư vấn chuyên sâu";
+    };
+
+    const excelData = filteredUsers.map((u, index) => {
+      const latestResult = (u.results && u.results.length > 0) ? u.results[0] : null;
+      const d = latestResult?.details || {};
+      const riasecCode = latestResult?.riasecCode || "Chưa làm test";
+
+      return {
+        "STT": index + 1,
+        "Họ Tên": u.name || "N/A",
+        "Email": u.email || "N/A",
+        "Lớp": u.phone || "N/A",
+        "Trường": u.address || "N/A",
+        "Mã RIASEC": riasecCode,
+        "Điểm R": d.R ?? 0,
+        "Điểm I": d.I ?? 0,
+        "Điểm A": d.A ?? 0,
+        "Điểm S": d.S ?? 0,
+        "Điểm E": d.E ?? 0,
+        "Điểm C": d.C ?? 0,
+        "Ngày thực hiện": latestResult?.createdAt 
+          ? new Date(latestResult.createdAt).toLocaleString('vi-VN') 
+          : "N/A",
+        // THÊM CỘT TƯ VẤN Ở ĐÂY
+        "Tư vấn khối thi": getConsultation(riasecCode)
+      };
+    });
+
+    const ws = XLSX.utils.json_to_sheet(excelData);
+
+    // Cập nhật lại độ rộng cột (thêm độ rộng cho cột tư vấn)
+    const colWidths = [
+      { wch: 5 }, { wch: 20 }, { wch: 25 }, { wch: 10 }, { wch: 25 }, 
+      { wch: 12 }, { wch: 7 }, { wch: 7 }, { wch: 7 }, { wch: 7 }, 
+      { wch: 7 }, { wch: 7 }, { wch: 18 }, 
+      { wch: 45 } // Cột tư vấn cần rộng hơn để đọc nội dung
+    ];
+    ws['!cols'] = colWidths;
+
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Students");
-    XLSX.writeFile(wb, "Career_Compass_Results.xlsx");
+    XLSX.utils.book_append_sheet(wb, ws, "KetQuaHocSinh");
+    
+    const fileName = `Ket_qua_RIASEC_TuVan_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, fileName);
   };
 
   function getCategoryName(c) {

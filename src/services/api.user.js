@@ -7,9 +7,9 @@ const loginAPI = (email, password) => {
         }
     });
 }
-const registerAPI = (name, email, password, phone) => {
+const registerAPI = (name, email, password, phone, address) => {
     const urlBackend = "/v1/api/auth/register";
-    return axios.post(urlBackend, { name, email, password, phone });
+    return axios.post(urlBackend, { name, email, password, phone, address });
 }
 const fetchAccountAPI = () => {
     const urlBackend = "/v1/api/auth/account";

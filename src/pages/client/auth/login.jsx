@@ -45,7 +45,7 @@ const Login = () => {
         },
       }}
     >
-      <div className="min-h-screen flex bg-white pt-20 font-sans selection:bg-rose-100 selection:text-rose-600">
+      <div className="min-h-screen flex bg-white font-sans selection:bg-rose-100 selection:text-rose-600">
         
         {/* --- BÊN TRÁI: HERO SECTION (BRANDING) --- */}
         <div className="hidden lg:flex lg:w-[55%] relative bg-[#020617] items-center justify-center p-12 overflow-hidden">

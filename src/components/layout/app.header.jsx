@@ -30,13 +30,11 @@ const AppHeader = () => {
     }
   };
 
-  // Cấu trúc navLinks động dựa trên trạng thái đăng nhập
   const navLinks = [
     { name: "Trang chủ", path: "/" },
-    // Chỉ hiện AI Chat khi đã đăng nhập
     ...(isAuthenticated ? [{ 
       name: "AI Chat", 
-      path: "/ai", // Thay đổi path này đúng với route bạn đã đặt
+      path: "/ai", 
       icon: <MessageSquareText size={14} className="text-indigo-500" /> 
     }] : []),
     { name: "Làm bài Test", path: "/question", isCTA: true },
@@ -101,7 +99,6 @@ const AppHeader = () => {
         <div className="max-w-7xl mx-auto px-5 lg:px-10">
           <div className="flex items-center justify-between">
             
-            {/* LOGO */}
             <Link to="/" className="flex items-center gap-3 group">
               <div className="relative flex items-center justify-center w-10 h-10 bg-blue-600 rounded-[14px] shadow-lg shadow-blue-200 group-hover:scale-105 transition-transform duration-300">
                 <Compass size={22} className="text-white" strokeWidth={2.5} />
@@ -114,7 +111,6 @@ const AppHeader = () => {
               </div>
             </Link>
 
-            {/* NAV (Desktop) */}
             <nav className="hidden md:flex items-center p-1 bg-slate-100/60 rounded-2xl border border-slate-100 gap-1">
               {navLinks.map((link) => {
                 const isActive = location.pathname === link.path;
@@ -136,14 +132,14 @@ const AppHeader = () => {
               })}
             </nav>
 
-            {/* ACTION */}
             <div className="flex items-center gap-3">
               {isAuthenticated ? (
                 <Dropdown
                   menu={{ items: accountMenuItems }}
                   trigger={["click"]}
                   placement="bottomRight"
-                  overlayClassName="pt-3 custom-dropdown-edtech"
+                  // SỬA LỖI 4: Đổi overlayClassName thành classNames.root
+                  classNames={{ root: "pt-3 custom-dropdown-edtech" }}
                 >
                   <button className="flex items-center gap-2 p-1 pr-3 rounded-2xl border border-slate-100 bg-white hover:border-blue-200 hover:shadow-md transition-all duration-300 group">
                     <Avatar 
@@ -193,10 +189,14 @@ const AppHeader = () => {
       <Drawer
         onClose={() => setMobileMenuOpen(false)}
         open={mobileMenuOpen}
-        width="85%"
+        // SỬA LỖI 3: Đổi width thành size (hoặc giữ width nhưng antd v5 khuyến khích dùng size)
+        size="default" 
         closeIcon={null}
-        headerStyle={{ display: 'none' }}
-        bodyStyle={{ padding: 0 }}
+        // SỬA LỖI 1 & 2: Chuyển headerStyle và bodyStyle vào styles object
+        styles={{
+          header: { display: 'none' },
+          body: { padding: 0 }
+        }}
       >
         <div className="flex flex-col h-full bg-white px-6 py-10">
           <div className="flex justify-between items-center mb-10">

@@ -80,7 +80,7 @@ const ForgotPasswordPage = () => {
       }}
     >
       {/* 1. FIX BUG: Thêm pt-24 để tránh đè Header fixed */}
-      <div className="min-h-screen bg-[#FFF8F9] pt-24 pb-12 px-4 flex justify-center items-start md:items-center">
+      <div className="min-h-screen bg-[#FFF8F9] pb-12 px-4 flex justify-center items-start md:items-center">
         <div className="w-full max-w-md animate-in fade-in zoom-in duration-500">
           
           {/* Nút quay lại login */}
