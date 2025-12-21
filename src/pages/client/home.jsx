@@ -94,31 +94,60 @@ const HomePage = () => {
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-rose-50/50 to-transparent -z-10 skew-x-12"></div>
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-rose-100/40 blur-[100px] rounded-full -z-10"></div>
         
-        <div className="max-w-6xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-rose-100 shadow-sm text-rose-600 rounded-full text-xs font-bold uppercase tracking-[0.2em] mb-8 animate-fade-in">
-            <ShieldCheck size={16} className="text-rose-500" /> 
-            Dự án Nghiên cứu Khoa học Kỹ thuật
+        
+        <div className="max-w-6xl mx-auto text-center flex flex-col items-center">
+          {/* Badge: Tự động tách dòng trên mobile cực nhỏ, duy trì độ cân đối */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-rose-100 shadow-sm text-rose-600 rounded-2xl md:rounded-full text-[10px] md:text-xs font-bold uppercase tracking-[0.15em] mb-8 animate-fade-in max-w-[280px] sm:max-w-none">
+            <ShieldCheck size={16} className="text-rose-500 shrink-0" /> 
+            <span className="text-center">
+              Dự án Nghiên cứu <span className="block sm:inline">Khoa học Kỹ thuật</span>
+            </span>
           </div>
           
-          <h1 className="text-5xl md:text-7xl font-black text-slate-900 leading-[1.1] mb-8 tracking-tight">
-            Thấu hiểu bản thân <br/>
-            Định hướng <span className="text-rose-600 relative">
-              Tương lai
-              <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 358 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M3 9C118.957 4.47226 238.497 3.35976 355 8" stroke="#FDA4AF" strokeWidth="5" strokeLinecap="round"/>
-              </svg>
+          {/* Heading: Phân cấp rõ ràng, tách dòng thông minh */}
+          <h1 className="text-4xl sm:text-5xl md:text-7xl font-black text-slate-900 leading-[1.2] md:leading-[1.1] mb-8 tracking-tight px-2">
+            {/* Hàng 1: Thấu hiểu bản thân */}
+            <span className="block mb-2 md:mb-0 md:inline">
+              Thấu hiểu bản thân
+            </span>{" "}
+            
+            {/* Hàng 2: Định hướng Tương lai (Luôn đi cùng nhau) */}
+            <span className="whitespace-nowrap">
+              <span className="inline">Định hướng</span>{" "}
+              <span className="text-rose-600 relative inline-block">
+                Tương lai
+                <svg 
+                  className="absolute -bottom-1 md:-bottom-2 left-0 w-full h-2 md:h-3 opacity-80" 
+                  viewBox="0 0 358 12" 
+                  fill="none" 
+                  preserveAspectRatio="none" 
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path 
+                    d="M3 9C118.957 4.47226 238.497 3.35976 355 8" 
+                    stroke="#FDA4AF" 
+                    strokeWidth="6" 
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </span>
             </span>
           </h1>
           
-          <div className="max-w-3xl mx-auto space-y-8">
-            <p className="text-xl text-slate-600 leading-relaxed font-medium italic">
-              "Lựa chọn nghề nghiệp đúng đắn là chìa khóa mở ra cánh cửa thành công và hạnh phúc."
+          <div className="max-w-3xl mx-auto space-y-6 md:space-y-8 px-4">
+            {/* Quote: Tăng kích thước và độ mảnh để sang trọng hơn */}
+            <p className="text-lg md:text-2xl text-slate-500 leading-relaxed font-medium italic opacity-90">
+              <span className="text-rose-400 text-3xl font-serif">“</span>
+              Lựa chọn nghề nghiệp đúng đắn là chìa khóa mở ra cánh cửa thành công và hạnh phúc.
+              <span className="text-rose-400 text-3xl font-serif">”</span>
             </p>
             
-            <p className="text-slate-500 text-lg leading-relaxed max-w-2xl mx-auto text-justify md:text-center">
-              Dựa trên học thuyết RIASEC của Tiến sĩ John Holland, chúng tôi giúp bạn khám phá thế mạnh tiềm ẩn và kết nối với những ngành nghề phù hợp nhất.
+            {/* Mô tả: Tách đoạn để dễ đọc trên điện thoại */}
+            <p className="text-slate-500 text-base md:text-lg leading-relaxed max-w-2xl mx-auto font-normal">
+              Dựa trên học thuyết <span className="font-bold text-slate-700">RIASEC</span> của Tiến sĩ John Holland, 
+              chúng tôi giúp bạn khám phá thế mạnh tiềm ẩn và kết nối với những ngành nghề phù hợp nhất.
             </p>
-
+            
             <div className="flex flex-col sm:flex-row items-center justify-center gap-5 pt-4">
               {/* Nút chính: Thay đổi onClick để gọi hàm xử lý thông minh */}
               <button 
